@@ -16,9 +16,11 @@ from keras.models import load_model
 
 # Utility code.
 from src.callbacks import RocAucEvaluation
-from src.load_data import load_data
+from src.load_data import load_data, load_test_data, load_sample_submission
 from src.load_glove_embeddings import load_embedding_matrix
-from src.bidirectional_GRU_attention import CUDNNBiRNNAttention
+from src.write_results import write_results
+# Model definition
+from src.bidirectional_GRU_attention import BidirectionalGRUAttention
 
 TRAIN = True
 PRODUCTION = True
@@ -28,13 +30,13 @@ MAX_FEATS = 5000
 # Paths to data sets
 train_path = './data/train.csv'
 test_path = './data/test.csv'
+submission_path = './data/sample_submission.csv'
 # Paths to glove embeddings.
 glove_path = './data/embeddings/glove.6B.100d.txt'
 glove_embed_dims = 100
 
 
-(x_train, y_train), (x_val, y_val), word_index, num_classes = load_data(path=train_path,
-                                                           max_features=MAX_FEATS)
+(x_train, y_train), (x_val, y_val), word_index, num_classes = load_data(path=train_path, max_features=MAX_FEATS)
 
 embedding_matrix = load_embedding_matrix(glove_path=glove_path,
                                          word_index=word_index,
@@ -42,7 +44,7 @@ embedding_matrix = load_embedding_matrix(glove_path=glove_path,
 
 vocab_size = len(word_index) + 1
 
-model_instance = CUDNNBiRNNAttention(num_classes=num_classes)
+model_instance = BidirectionalGRUAttention(num_classes=num_classes)
 
 print(num_classes)
 
@@ -78,7 +80,7 @@ if TRAIN:
               callbacks=[tensorboard, checkpoint, early_stop, roc_auc])
 
 elif WRITE_RESULTS:
-    # test = pd.read_csv('./data/test.csv')
-    # submission = pd.read_csv('./data/sample_submission.csv')
-    # X_test = test["comment_text"].fillna("fillna").values
+    test_set = load_test_data(test_path)
+    submission = load_sample_submission(submission_path)
     model = load_model(model_instance.checkpoint_path)
+    write_results(model, test_set, submission)

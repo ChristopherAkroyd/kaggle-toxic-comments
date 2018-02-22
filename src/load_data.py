@@ -62,3 +62,13 @@ def load_data(path, max_features=5000):
 
     return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes
 
+
+def load_test_data(path):
+    test_set = pd.read_csv(path)
+    test_set = test_set[TEXT_KEY].fillna("fillna").values
+    return test_set
+
+
+def load_sample_submission(path):
+    submission = pd.read_csv(path)
+    return submission

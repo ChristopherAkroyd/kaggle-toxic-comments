@@ -13,8 +13,8 @@ CLIP_NORM = 1.0
 NUM_CLASSES = 12
 
 
-class CUDNNBiRNNAttention:
-    def __init__(self, num_classes=5):
+class BidirectionalGRUAttention:
+    def __init__(self, num_classes=6):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
         self.LEARN_RATE = LEARN_RATE
@@ -37,7 +37,7 @@ class CUDNNBiRNNAttention:
         model.add(Attention())
         model.add(Dropout(0.5))
 
-        model.add(Dense(self.num_classes, activation='softmax'))
+        model.add(Dense(self.num_classes, activation='sigmoid'))
 
         model.summary()
 
