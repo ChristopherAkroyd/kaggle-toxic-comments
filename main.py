@@ -20,23 +20,25 @@ from src.load_data import load_data, load_test_data, load_sample_submission
 from src.load_glove_embeddings import load_embedding_matrix
 from src.write_results import write_results
 # Model definition
+from src.bidirectional_GRU import BidirectionalGRU
 from src.bidirectional_GRU_attention import BidirectionalGRUAttention
+from src.layers.Attention import FeedForwardAttention
 
 TRAIN = True
 PRODUCTION = True
 WRITE_RESULTS = True
-MAX_FEATS = 5000
+MAX_FEATS = 50000
 
 # Paths to data sets
 train_path = './data/train.csv'
 test_path = './data/test.csv'
 submission_path = './data/sample_submission.csv'
 # Paths to glove embeddings.
-glove_path = './data/embeddings/glove.6B.100d.txt'
-glove_embed_dims = 100
+glove_path = './data/embeddings/glove.6B.300d.txt'
+glove_embed_dims = 300
 
 
-(x_train, y_train), (x_val, y_val), word_index, num_classes = load_data(path=train_path, max_features=MAX_FEATS)
+(x_train, y_train), (x_val, y_val), word_index, num_classes, tokenizer = load_data(path=train_path, max_features=MAX_FEATS)
 
 embedding_matrix = load_embedding_matrix(glove_path=glove_path,
                                          word_index=word_index,
@@ -44,7 +46,7 @@ embedding_matrix = load_embedding_matrix(glove_path=glove_path,
 
 vocab_size = len(word_index) + 1
 
-model_instance = BidirectionalGRUAttention(num_classes=num_classes)
+model_instance = BidirectionalGRU(num_classes=num_classes)
 
 print(num_classes)
 
@@ -60,7 +62,7 @@ if TRAIN:
     checkpoint = ModelCheckpoint(model_instance.checkpoint_path, save_best_only=True)
 
     early_stop = EarlyStopping(monitor='val_loss',
-                               patience=6,
+                               patience=4,
                                verbose=1,
                                min_delta=0.00001)
 
@@ -79,8 +81,8 @@ if TRAIN:
               batch_size=model_instance.BATCH_SIZE,
               callbacks=[tensorboard, checkpoint, early_stop, roc_auc])
 
-elif WRITE_RESULTS:
-    test_set = load_test_data(test_path)
+if WRITE_RESULTS:
+    test_set = load_test_data(test_path, tokenizer)
     submission = load_sample_submission(submission_path)
-    model = load_model(model_instance.checkpoint_path)
+    model = load_model(model_instance.checkpoint_path, custom_objects={'FeedForwardAttention': FeedForwardAttention})
     write_results(model, test_set, submission)

@@ -8,7 +8,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 
 RANDOM_SEED = 59185
-MAX_SEQ_LEN = 200
+MAX_SEQ_LEN = 250
 TEXT_KEY = 'comment_text'
 
 # Smile, Laugh, Love, Wink emoticon regex : :), : ), :-), (:, ( :, (-:, :'), :D, : D, :-D, xD, x-D, XD, X-D,
@@ -60,12 +60,15 @@ def load_data(path, max_features=5000):
     x_train, x_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
     num_classes = 6
 
-    return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes
+    return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes, tokenizer
 
 
-def load_test_data(path):
+def load_test_data(path, tokenizer):
     test_set = pd.read_csv(path)
     test_set = test_set[TEXT_KEY].fillna("fillna").values
+    test_set = tokenizer.texts_to_sequences(test_set)
+    test_set = pad_sequences(test_set, maxlen=MAX_SEQ_LEN)
+
     return test_set
 
 
