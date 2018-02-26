@@ -2,17 +2,17 @@ from keras.layers import Input, Dense, Embedding, Bidirectional, SpatialDropout1
     GaussianNoise, CuDNNGRU, concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D, Dropout
 from keras.models import Model
 from keras.regularizers import l2
-from keras.optimizers import Adam, Nadam
+from keras.optimizers import Nadam
 
 # HPARAMs
 BATCH_SIZE = 128
-EPOCHS = 8
+EPOCHS = 5
 LEARN_RATE = 0.0005
 CLIP_NORM = 1.0
 NUM_CLASSES = 12
 
 
-class BidirectionalGRU:
+class BidirectionalGRUConcPool:
     def __init__(self, num_classes=NUM_CLASSES):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
@@ -23,12 +23,12 @@ class BidirectionalGRU:
     def create_model(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200):
         input = Input(shape=(input_length, ))
 
-        embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length, trainable=True)(input)
+        embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
 
         spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
 
         noise = GaussianNoise(0.2)(spatial_dropout_1)
-        bi_gru_1, last_state_forward, last_state_back = Bidirectional(CuDNNGRU(72, return_sequences=True,
+        bi_gru_1, last_state_forward, last_state_back = Bidirectional(CuDNNGRU(128, return_sequences=True,
                                                                                return_state=True,
                                                                                recurrent_regularizer=l2(0.0001)))(noise)
 
@@ -40,7 +40,7 @@ class BidirectionalGRU:
 
         conc = concatenate([last_state, max_pool, avg_pool], name='conc_pool')
 
-        drop_1 = Dropout(0.2)(conc)
+        drop_1 = Dropout(0.5)(conc)
 
         outputs = Dense(self.num_classes, activation='sigmoid')(drop_1)
 

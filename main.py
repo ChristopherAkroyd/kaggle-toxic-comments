@@ -19,7 +19,7 @@ from src.load_data import load_data_split, load_test_data, load_sample_submissio
 from src.load_glove_embeddings import load_embedding_matrix
 from src.write_results import write_results
 # Model definition
-from src.models.bidirectional_GRU_conc_pool import BidirectionalGRU
+from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
 from src.models.GRU_conc_pool import GRUConcPool
 from src.layers.Attention import FeedForwardAttention
 
@@ -34,7 +34,7 @@ train_path = './data/train.csv'
 test_path = './data/test.csv'
 submission_path = './data/sample_submission.csv'
 # Paths to glove embeddings.
-glove_path = './data/embeddings/glove.6B.300d.txt'
+glove_path = './data/embeddings/glove.42B.300d.txt'
 glove_embed_dims = 300
 
 
@@ -46,7 +46,7 @@ embedding_matrix = load_embedding_matrix(glove_path=glove_path,
 
 vocab_size = len(word_index) + 1
 
-model_instance = BidirectionalGRU(num_classes=num_classes)
+model_instance = BidirectionalGRUConcPool(num_classes=num_classes)
 
 print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
 print('Number of Classes' + str(num_classes))
