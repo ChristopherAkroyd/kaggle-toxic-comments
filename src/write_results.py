@@ -1,4 +1,6 @@
 def write_results(model, test_set, df_submission):
+    print('Starting to write results...')
+
     print('Running ' + str(len(test_set)) + ' predictions...')
 
     predictions = model.predict(test_set)

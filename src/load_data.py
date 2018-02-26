@@ -8,16 +8,36 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 
 RANDOM_SEED = 59185
-MAX_SEQ_LEN = 250
+MAX_SEQ_LEN = 100
+MAX_FEATS = 15000
 TEXT_KEY = 'comment_text'
 
-# Smile, Laugh, Love, Wink emoticon regex : :), : ), :-), (:, ( :, (-:, :'), :D, : D, :-D, xD, x-D, XD, X-D,
-# <3, ;-), ;), ;-D, ;D, (;, (-;
-emo_pos_regex = re.compile('(:\s?\)|:-\)|\(\s?:|\(-:|:\'\))|(:\s?D|:-D|x-?D|X-?D)|(<3)|(;-?\)|;-?D|\(-?;)')
-# Sad & Cry emoticon regex: :-(, : (, :(, ):, )-:, :,(, :'(, :"(
-emo_neg_regex = re.compile('(:\s?\(|:-\(|\)\s?:|\)-:)|(:,\(|:\'\(|:"\()')
-# Turns Yaaaayyy into yay.
-collapse_letters_regex = re.compile('(.)\1+')
+
+def normalize(s):
+    """
+    Given a text, cleans and normalizes it. Feel free to add your own stuff.
+    """
+    s = s.lower()
+    # Replace ips
+    s = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', '<IP> ', s)
+    # Isolate punctuation
+    s = re.sub(r'([\'\"\.\(\)\!\?\-\\\/\,])', r' \1 ', s)
+    # Remove some special characters
+    s = re.sub(r'([\;\:\|•«\n])', ' ', s)
+    # Replace numbers and symbols with language
+    s = s.replace('&', ' and ')
+    s = s.replace('@', ' at ')
+    s = s.replace('0', ' zero ')
+    s = s.replace('1', ' one ')
+    s = s.replace('2', ' two ')
+    s = s.replace('3', ' three ')
+    s = s.replace('4', ' four ')
+    s = s.replace('5', ' five ')
+    s = s.replace('6', ' six ')
+    s = s.replace('7', ' seven ')
+    s = s.replace('8', ' eight ')
+    s = s.replace('9', ' nine ')
+    return s
 
 
 def pre_process(df):
@@ -28,9 +48,7 @@ def pre_process(df):
     # @TODO Revist with a fresh perspective.
     for index, tweet in df.iterrows():
         try:
-            tweet[TEXT_KEY] = emo_pos_regex.sub('<EMO_POS>', tweet[TEXT_KEY])
-            tweet[TEXT_KEY] = emo_neg_regex.sub('<EMO_NEG>', tweet[TEXT_KEY])
-            tweet[TEXT_KEY] = collapse_letters_regex.sub(r'\1\1', tweet[TEXT_KEY])
+            tweet[TEXT_KEY] = normalize(tweet[TEXT_KEY])
             rows.append(tweet)
         except:
             pass
@@ -40,10 +58,8 @@ def pre_process(df):
     return new_df
 
 
-def load_data(path, max_features=5000):
+def load_data(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
     df = pd.read_csv(path)
-
-    print(len(df))
 
     data_set = pre_process(df)
 
@@ -51,23 +67,26 @@ def load_data(path, max_features=5000):
     tokenizer.fit_on_texts(data_set[TEXT_KEY])
     word_index = tokenizer.word_index
 
-    X = pad_sequences(tokenizer.texts_to_sequences(data_set[TEXT_KEY].fillna("fillna").values), maxlen=MAX_SEQ_LEN)
-    y = data_set[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
+    x_train = pad_sequences(tokenizer.texts_to_sequences(data_set[TEXT_KEY].fillna("fillna").values), maxlen=sequence_length)
+    y_train = data_set[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
+
+    return (x_train, y_train), word_index, tokenizer
 
 
-    print('Number of Data Samples:' + str(len(X)))
+def load_data_split(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
+    (x_train, y_train), word_index, tokenizer = load_data(path, max_features, sequence_length)
 
-    x_train, x_val, y_train, y_val = train_test_split(X, y, test_size=0.2)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1)
     num_classes = 6
 
     return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes, tokenizer
 
 
-def load_test_data(path, tokenizer):
+def load_test_data(path, tokenizer, sequence_length=MAX_SEQ_LEN):
     test_set = pd.read_csv(path)
     test_set = test_set[TEXT_KEY].fillna("fillna").values
     test_set = tokenizer.texts_to_sequences(test_set)
-    test_set = pad_sequences(test_set, maxlen=MAX_SEQ_LEN)
+    test_set = pad_sequences(test_set, maxlen=sequence_length)
 
     return test_set
 

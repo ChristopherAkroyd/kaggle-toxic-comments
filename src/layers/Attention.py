@@ -1,14 +1,7 @@
 from keras import backend as K
 from keras.engine.topology import Layer
 from keras import constraints, initializers, regularizers
-
-
-def dot_product(x, kernel):
-    if K.backend() == 'tensorflow':
-        # todo: check that this is correct
-        return K.squeeze(K.dot(x, K.expand_dims(kernel)), axis=-1)
-    else:
-        return K.dot(x, kernel)
+from .attention_utils import dot_product
 
 
 # http://colinraffel.com/publications/iclr2016feed.pdf
@@ -45,12 +38,15 @@ class FeedForwardAttention(Layer):
                                         constraint=self.bias_constraint)
         else:
             self.bias = None
+
         self.trainable_weights = [self.kernel]
         self.built = True
 
     def compute_mask(self, input, input_mask=None):
-        # do not pass the mask to the next layers
-        return None
+        if isinstance(input_mask, list):
+            return [None] * len(input_mask)
+        else:
+            return None
 
     def call(self, x, mask=None):
         eij = dot_product(x, self.kernel)

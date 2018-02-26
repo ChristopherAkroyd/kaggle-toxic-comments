@@ -1,4 +1,3 @@
-import time
 import keras.backend as K
 
 # Only use the amount of memory we require rather than the maximum
@@ -10,24 +9,25 @@ if 'tensorflow' == K.backend():
     config.gpu_options.visible_device_list = "0"
     set_session(tf.Session(config=config))
 
-from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.models import load_model
 
 
 # Utility code.
 from src.callbacks import RocAucEvaluation
-from src.load_data import load_data, load_test_data, load_sample_submission
+from src.load_data import load_data_split, load_test_data, load_sample_submission
 from src.load_glove_embeddings import load_embedding_matrix
 from src.write_results import write_results
 # Model definition
-from src.bidirectional_GRU import BidirectionalGRU
-from src.bidirectional_GRU_attention import BidirectionalGRUAttention
+from src.models.bidirectional_GRU_conc_pool import BidirectionalGRU
+from src.models.GRU_conc_pool import GRUConcPool
 from src.layers.Attention import FeedForwardAttention
 
 TRAIN = True
-PRODUCTION = True
 WRITE_RESULTS = True
-MAX_FEATS = 50000
+MAX_FEATS = 200000
+SEQUENCE_LENGTH = 150
+
 
 # Paths to data sets
 train_path = './data/train.csv'
@@ -38,7 +38,7 @@ glove_path = './data/embeddings/glove.6B.300d.txt'
 glove_embed_dims = 300
 
 
-(x_train, y_train), (x_val, y_val), word_index, num_classes, tokenizer = load_data(path=train_path, max_features=MAX_FEATS)
+(x_train, y_train), (x_val, y_val), word_index, num_classes, tokenizer = load_data_split(path=train_path, max_features=MAX_FEATS, sequence_length=SEQUENCE_LENGTH)
 
 embedding_matrix = load_embedding_matrix(glove_path=glove_path,
                                          word_index=word_index,
@@ -48,16 +48,15 @@ vocab_size = len(word_index) + 1
 
 model_instance = BidirectionalGRU(num_classes=num_classes)
 
-print(num_classes)
+print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
+print('Number of Classes' + str(num_classes))
+
 
 if TRAIN:
-    print(x_train.shape)
     model = model_instance.create_model(vocab_size,
                                         embedding_matrix,
                                         input_length=x_train.shape[1],
                                         embed_dim=glove_embed_dims)
-
-    tensorboard = TensorBoard(log_dir='./logs/{}'.format(time.time()), batch_size=model_instance.BATCH_SIZE)
 
     checkpoint = ModelCheckpoint(model_instance.checkpoint_path, save_best_only=True)
 
@@ -79,10 +78,10 @@ if TRAIN:
               validation_data=(x_val, y_val),
               epochs=model_instance.EPOCHS,
               batch_size=model_instance.BATCH_SIZE,
-              callbacks=[tensorboard, checkpoint, early_stop, roc_auc])
+              callbacks=[checkpoint, early_stop, roc_auc])
 
 if WRITE_RESULTS:
-    test_set = load_test_data(test_path, tokenizer)
+    test_set = load_test_data(test_path, tokenizer, sequence_length=SEQUENCE_LENGTH)
     submission = load_sample_submission(submission_path)
     model = load_model(model_instance.checkpoint_path, custom_objects={'FeedForwardAttention': FeedForwardAttention})
     write_results(model, test_set, submission)

@@ -3,7 +3,7 @@ from keras.models import Sequential
 from keras.regularizers import l2
 from keras.optimizers import Adam
 
-from .layers.Attention import FeedForwardAttention as Attention
+from src.layers.Attention import FeedForwardAttention as Attention
 
 # HPARAMs
 BATCH_SIZE = 512
