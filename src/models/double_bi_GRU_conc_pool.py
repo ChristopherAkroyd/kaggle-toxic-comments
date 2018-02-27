@@ -6,19 +6,19 @@ from keras.optimizers import Nadam
 
 # HPARAMs
 BATCH_SIZE = 128
-EPOCHS = 8
+EPOCHS = 12
 LEARN_RATE = 0.0005
 CLIP_NORM = 1.0
 NUM_CLASSES = 12
 
 
-class BidirectionalGRUConcPool:
+class DoubleBiGRUConcPool:
     def __init__(self, num_classes=NUM_CLASSES):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
         self.LEARN_RATE = LEARN_RATE
         self.num_classes = num_classes
-        self.checkpoint_path = './model_checkpoints/BidirectionalGRUConcPool.hdf5'
+        self.checkpoint_path = './model_checkpoints/DoubleBiGRUConcPool.hdf5'
 
     def create_model(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200):
         input = Input(shape=(input_length, ))
@@ -28,19 +28,23 @@ class BidirectionalGRUConcPool:
         spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
 
         noise = GaussianNoise(0.2)(spatial_dropout_1)
-        bi_gru_1, last_state_forward, last_state_back = Bidirectional(CuDNNGRU(128, return_sequences=True,
-                                                                               return_state=True,
-                                                                               recurrent_regularizer=l2(0.0001)))(noise)
+        bi_gru_1 = Bidirectional(CuDNNGRU(64, return_sequences=True, recurrent_regularizer=l2(0.0001)))(noise)
 
         bi_gru_1 = SpatialDropout1D(0.5)(bi_gru_1)
 
+        bi_gru_2, last_state_forward, last_state_back = Bidirectional(CuDNNGRU(64, return_sequences=True,
+                                                                               return_state=True,
+                                                                               recurrent_regularizer=l2(0.0001)))(bi_gru_1)
+
+        bi_gru_2 = SpatialDropout1D(0.5)(bi_gru_2)
+
         last_state = concatenate([last_state_forward, last_state_back], name='last_state')
-        avg_pool = GlobalAveragePooling1D()(bi_gru_1)
-        max_pool = GlobalMaxPooling1D()(bi_gru_1)
+        avg_pool = GlobalAveragePooling1D()(bi_gru_2)
+        max_pool = GlobalMaxPooling1D()(bi_gru_2)
 
         conc = concatenate([last_state, max_pool, avg_pool], name='conc_pool')
 
-        drop_1 = Dropout(0.3)(conc)
+        drop_1 = Dropout(0.5)(conc)
 
         outputs = Dense(self.num_classes, activation='sigmoid')(drop_1)
 

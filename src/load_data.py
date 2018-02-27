@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import re
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 
 # Tokenize and sequence padding.
 from keras.preprocessing.sequence import pad_sequences
@@ -76,15 +76,33 @@ def load_data(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
 def load_data_split(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
     (x_train, y_train), word_index, tokenizer = load_data(path, max_features, sequence_length)
 
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.05)
     num_classes = 6
 
     return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes, tokenizer
 
 
+def load_data_folds():
+    return
+
+
 def load_test_data(path, tokenizer, sequence_length=MAX_SEQ_LEN):
     test_set = pd.read_csv(path)
+    new_df = pd.DataFrame.from_items(
+        [(name, pd.Series(data=None, dtype=series.dtype)) for name, series in test_set.iteritems()])
+    rows = []
+
+    for index, tweet in test_set.iterrows():
+        try:
+            tweet[TEXT_KEY] = normalize(tweet[TEXT_KEY])
+            rows.append(tweet)
+        except:
+            pass
+
+    new_df = new_df.append(rows)
+    test_set = new_df
     test_set = test_set[TEXT_KEY].fillna("fillna").values
+
     test_set = tokenizer.texts_to_sequences(test_set)
     test_set = pad_sequences(test_set, maxlen=sequence_length)
 
