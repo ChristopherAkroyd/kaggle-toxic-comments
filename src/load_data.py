@@ -82,8 +82,14 @@ def load_data_split(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
     return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes, tokenizer
 
 
-def load_data_folds():
-    return
+def load_data_folds(path, folds=10, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
+    (x_train, y_train), word_index, tokenizer = load_data(path, max_features, sequence_length)
+
+    kfold = KFold(n_splits=folds)
+    folds = kfold.split(x_train)
+    num_classes = 6
+
+    return (x_train, y_train), folds, word_index, num_classes, tokenizer
 
 
 def load_test_data(path, tokenizer, sequence_length=MAX_SEQ_LEN):

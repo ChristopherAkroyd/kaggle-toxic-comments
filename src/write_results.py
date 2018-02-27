@@ -1,9 +1,10 @@
+import numpy as np
 from sklearn.preprocessing import minmax_scale
 
 labels = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 
-# Leaderboard trickery functions.
+# Leaderboard trickery functions that normalise the models output..
 def min_max_scale(predictions):
     for label in labels:
         print('Scaling {}...'.format(label))
@@ -24,7 +25,18 @@ def write_results(model, test_set, df_submission, trickery='power_scale'):
 
     print('Running ' + str(len(test_set)) + ' predictions...')
 
-    predictions = model.predict(test_set)
+    if type(model) == list:
+        fold_predictions = []
+        for i in range(len(model)):
+            print('Running Fold ' + str(i) + ' predictions...')
+
+        predictions = np.ones(len(model))
+        for fold in fold_predictions:
+            predictions *= fold
+
+        predictions **= (1. / len(model))
+    else:
+        predictions = model.predict(test_set)
 
     assert len(predictions) == len(test_set)
 
