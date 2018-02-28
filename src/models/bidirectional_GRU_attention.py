@@ -39,8 +39,18 @@ class BidirectionalGRUAttention:
 
         model.add(Dense(self.num_classes, activation='sigmoid'))
 
-        model.summary()
+        return model
 
-        model.compile(loss='binary_crossentropy', optimizer=Adam(lr=self.LEARN_RATE, clipnorm=CLIP_NORM), metrics=['accuracy'])
+    def build(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200, summary=True):
+        model = self.create_model(vocab_size, embedding_matrix, input_length, embed_dim)
+        model = self.compile(model)
 
+        if summary:
+            model.summary()
+
+        return model
+
+    def compile(self, model):
+        model.compile(loss='binary_crossentropy', optimizer=Adam(lr=self.LEARN_RATE, clipnorm=CLIP_NORM),
+                      metrics=['accuracy'])
         return model

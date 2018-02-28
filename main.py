@@ -52,10 +52,10 @@ print('Number of Classes: ' + str(num_classes))
 
 
 if TRAIN:
-    model = model_instance.create_model(vocab_size,
-                                        embedding_matrix,
-                                        input_length=x_train.shape[1],
-                                        embed_dim=glove_embed_dims)
+    model = model_instance.build(vocab_size,
+                                 embedding_matrix,
+                                 input_length=x_train.shape[1],
+                                 embed_dim=glove_embed_dims)
 
     checkpoint = ModelCheckpoint(model_instance.checkpoint_path, save_best_only=True)
 

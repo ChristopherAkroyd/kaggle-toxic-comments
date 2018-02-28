@@ -9,13 +9,14 @@ if 'tensorflow' == K.backend():
     config.gpu_options.visible_device_list = "0"
     set_session(tf.Session(config=config))
 
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 # Utility code.
 from src.callbacks import RocAucEvaluation
 from src.load_data import load_data_folds, load_test_data, load_sample_submission
 from src.load_glove_embeddings import load_embedding_matrix
 from src.write_results import write_results
+from src.util import get_save_path
 # Model definition
 from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
 
@@ -62,12 +63,13 @@ if TRAIN:
         x_val, y_val = x_train[test], y_train[test]
 
         model = None
-        model = model_instance.create_model(vocab_size,
-                                            embedding_matrix,
-                                            input_length=x_train.shape[1],
-                                            embed_dim=glove_embed_dims)
+        model = model_instance.build(vocab_size,
+                                     embedding_matrix,
+                                     input_length=x_train.shape[1],
+                                     embed_dim=glove_embed_dims)
 
         roc_auc = RocAucEvaluation(validation_data=(x_val, y_val), interval=1)
+        checkpoint = ModelCheckpoint(get_save_path(model_instance, fold=i), save_best_only=True)
 
         model.fit(x=x_train,
                   y=y_train,
