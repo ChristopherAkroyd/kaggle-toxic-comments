@@ -59,6 +59,7 @@ if TRAIN:
                                min_delta=0.00001)
 
     for i, (train, test) in enumerate(folds):
+        print('Fold:' + str(i + 1))
         f_x_train, f_y_train = x_train[train], y_train[train]
         x_val, y_val = x_train[test], y_train[test]
 
@@ -71,8 +72,8 @@ if TRAIN:
         roc_auc = RocAucEvaluation(validation_data=(x_val, y_val), interval=1)
         checkpoint = ModelCheckpoint(get_save_path(model_instance, fold=i), save_best_only=True)
 
-        model.fit(x=x_train,
-                  y=y_train,
+        model.fit(x=f_x_train,
+                  y=f_y_train,
                   validation_data=(x_val, y_val),
                   epochs=model_instance.EPOCHS,
                   batch_size=model_instance.BATCH_SIZE,
