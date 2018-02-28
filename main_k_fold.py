@@ -9,7 +9,7 @@ if 'tensorflow' == K.backend():
     config.gpu_options.visible_device_list = "0"
     set_session(tf.Session(config=config))
 
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 # Utility code.
 from src.callbacks import RocAucEvaluation
@@ -24,7 +24,7 @@ TRAIN = True
 WRITE_RESULTS = True
 MAX_FEATS = 200000
 SEQUENCE_LENGTH = 150
-
+NUM_FOLDS = 10
 
 # Paths to data sets
 train_path = './data/train.csv'
@@ -36,6 +36,7 @@ glove_embed_dims = 300
 
 
 (x_train, y_train), folds, word_index, num_classes, tokenizer = load_data_folds(path=train_path,
+                                                                                folds=NUM_FOLDS,
                                                                                 max_features=MAX_FEATS,
                                                                                 sequence_length=SEQUENCE_LENGTH)
 
@@ -50,24 +51,30 @@ model_instance = BidirectionalGRUConcPool(num_classes=num_classes)
 print('Number of Data Samples:' + str(len(x_train)))
 print('Number of Classes: ' + str(num_classes))
 
-models = []
-
 if TRAIN:
     early_stop = EarlyStopping(monitor='val_loss',
-                               patience=1,
+                               patience=2,
                                verbose=1,
                                min_delta=0.00001)
+
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+                                  patience=1,
+                                  verbose=1,
+                                  epsilon=0.0001,
+                                  mode='min', min_lr=0.0001)
+
+    model = model_instance.build(vocab_size,
+                                 embedding_matrix,
+                                 input_length=x_train.shape[1],
+                                 embed_dim=glove_embed_dims,
+                                 summary=False)
+    # Store initial weights
+    init_weights = model.get_weights()
 
     for i, (train, test) in enumerate(folds):
         print('Fold:' + str(i + 1))
         f_x_train, f_y_train = x_train[train], y_train[train]
         x_val, y_val = x_train[test], y_train[test]
-
-        model = None
-        model = model_instance.build(vocab_size,
-                                     embedding_matrix,
-                                     input_length=x_train.shape[1],
-                                     embed_dim=glove_embed_dims)
 
         roc_auc = RocAucEvaluation(validation_data=(x_val, y_val), interval=1)
         checkpoint = ModelCheckpoint(get_save_path(model_instance, fold=i), save_best_only=True)
@@ -77,11 +84,15 @@ if TRAIN:
                   validation_data=(x_val, y_val),
                   epochs=model_instance.EPOCHS,
                   batch_size=model_instance.BATCH_SIZE,
-                  callbacks=[early_stop, roc_auc])
+                  callbacks=[early_stop, roc_auc, checkpoint])
 
-        models.append(model)
+        model.set_weights(init_weights)
+
+    model = None
+    K.clear_session()
 
 if WRITE_RESULTS:
     test_set = load_test_data(test_path, tokenizer, sequence_length=SEQUENCE_LENGTH)
+
     submission = load_sample_submission(submission_path)
-    write_results(models, test_set, submission)
+    write_results(model_instance, test_set, submission, folds=NUM_FOLDS)

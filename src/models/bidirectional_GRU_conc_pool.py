@@ -6,8 +6,8 @@ from keras.optimizers import Nadam
 
 # HPARAMs
 BATCH_SIZE = 128
-EPOCHS = 8
-LEARN_RATE = 0.0005
+EPOCHS = 50
+LEARN_RATE = 0.00005
 CLIP_NORM = 1.0
 NUM_CLASSES = 12
 
@@ -18,7 +18,6 @@ class BidirectionalGRUConcPool:
         self.EPOCHS = EPOCHS
         self.LEARN_RATE = LEARN_RATE
         self.num_classes = num_classes
-        self.checkpoint_path = './model_checkpoints/BidirectionalGRUConcPool.hdf5'
 
     def create_model(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200):
         input = Input(shape=(input_length, ))
@@ -50,12 +49,10 @@ class BidirectionalGRUConcPool:
 
     def build(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200, summary=True):
         model = self.create_model(vocab_size, embedding_matrix, input_length, embed_dim)
-        model = self.compile(model)
+
+        model.compile(loss='binary_crossentropy', optimizer=Nadam(lr=self.LEARN_RATE), metrics=['accuracy'])
 
         if summary:
             model.summary()
-        return model
 
-    def compile(self, model):
-        model = model.compile(loss='binary_crossentropy', optimizer=Nadam(lr=self.LEARN_RATE), metrics=['accuracy'])
         return model

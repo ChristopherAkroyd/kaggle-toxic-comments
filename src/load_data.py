@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split, KFold
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 
-RANDOM_SEED = 59185
+RANDOM_SEED = 233
 MAX_SEQ_LEN = 100
 MAX_FEATS = 15000
 TEXT_KEY = 'comment_text'
@@ -76,7 +76,7 @@ def load_data(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
 def load_data_split(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
     (x_train, y_train), word_index, tokenizer = load_data(path, max_features, sequence_length)
 
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.05)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.05, random_state=RANDOM_SEED)
     num_classes = 6
 
     return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), word_index, num_classes, tokenizer
@@ -85,7 +85,7 @@ def load_data_split(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
 def load_data_folds(path, folds=10, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
     (x_train, y_train), word_index, tokenizer = load_data(path, max_features, sequence_length)
 
-    kfold = KFold(n_splits=folds)
+    kfold = KFold(n_splits=folds, random_state=RANDOM_SEED)
     folds = kfold.split(x_train)
     num_classes = 6
 

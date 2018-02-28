@@ -10,14 +10,13 @@ if 'tensorflow' == K.backend():
     set_session(tf.Session(config=config))
 
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from keras.models import load_model
-
 
 # Utility code.
 from src.callbacks import RocAucEvaluation
 from src.load_data import load_data_split, load_test_data, load_sample_submission
 from src.load_glove_embeddings import load_embedding_matrix
 from src.write_results import write_results
+from src.util import get_save_path
 # Model definition
 from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
 from src.layers.Attention import FeedForwardAttention
@@ -57,7 +56,7 @@ if TRAIN:
                                  input_length=x_train.shape[1],
                                  embed_dim=glove_embed_dims)
 
-    checkpoint = ModelCheckpoint(model_instance.checkpoint_path, save_best_only=True)
+    checkpoint = ModelCheckpoint(get_save_path(model_instance), save_best_only=True)
 
     early_stop = EarlyStopping(monitor='val_loss',
                                patience=4,
@@ -81,6 +80,7 @@ if TRAIN:
 
 if WRITE_RESULTS:
     test_set = load_test_data(test_path, tokenizer, sequence_length=SEQUENCE_LENGTH)
+
     submission = load_sample_submission(submission_path)
-    model = load_model(model_instance.checkpoint_path, custom_objects={'FeedForwardAttention': FeedForwardAttention})
-    write_results(model, test_set, submission)
+    write_results(model_instance, test_set, submission,
+                  folds=False, custom_objects={'FeedForwardAttention': FeedForwardAttention})
