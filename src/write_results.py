@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.preprocessing import minmax_scale
 from keras.models import load_model
-from src.util import get_save_path
+from src.util import get_save_path, get_submission_path
 
 labels = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
@@ -60,4 +60,4 @@ def write_results(model_instance, test_set, df_submission, trickery='power_scale
 
     df_submission[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]] = predictions
 
-    df_submission.to_csv('submission.csv', index=False)
+    df_submission.to_csv(get_submission_path(model_instance), index=False)
