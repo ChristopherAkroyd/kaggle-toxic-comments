@@ -22,7 +22,7 @@ def power_scale(predictions, power=1.4):
 
 
 # Write out the results
-def write_results(model_instance, test_set, df_submission, trickery='power_scale', folds=10, custom_objects={}):
+def write_results(model_instance, test_set, df_submission, trickery='power_scale', folds=-1, custom_objects={}):
     print('Starting to write results...')
 
     print('Running ' + str(len(test_set)) + ' predictions...')

@@ -19,12 +19,16 @@ from src.write_results import write_results
 from src.util import get_save_path
 # Model definition
 from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
+from src.models.bidirectional_GRU_max_avg import BidirectionalGRUMaxAvg
+from src.models.bidirectional_GRU_attention import BidirectionalGRUAttention
+from src.models.text_cnn import TextCNN
+from src.models.GRU_conc_pool import GRUConcPool
 from src.layers.Attention import FeedForwardAttention
 
 TRAIN = True
 WRITE_RESULTS = True
 MAX_FEATS = 200000
-SEQUENCE_LENGTH = 150
+SEQUENCE_LENGTH = 200
 
 
 # Paths to data sets
@@ -44,7 +48,7 @@ embedding_matrix = load_embedding_matrix(glove_path=glove_path,
 
 vocab_size = len(word_index) + 1
 
-model_instance = BidirectionalGRUConcPool(num_classes=num_classes)
+model_instance = GRUConcPool(num_classes=num_classes)
 
 print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
 print('Number of Classes: ' + str(num_classes))
@@ -82,5 +86,4 @@ if WRITE_RESULTS:
     test_set = load_test_data(test_path, tokenizer, sequence_length=SEQUENCE_LENGTH)
 
     submission = load_sample_submission(submission_path)
-    write_results(model_instance, test_set, submission,
-                  folds=False, custom_objects={'FeedForwardAttention': FeedForwardAttention})
+    write_results(model_instance, test_set, submission, custom_objects={'FeedForwardAttention': FeedForwardAttention})

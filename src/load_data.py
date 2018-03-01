@@ -27,16 +27,13 @@ def normalize(s):
     # Replace numbers and symbols with language
     s = s.replace('&', ' and ')
     s = s.replace('@', ' at ')
-    s = s.replace('0', ' zero ')
-    s = s.replace('1', ' one ')
-    s = s.replace('2', ' two ')
-    s = s.replace('3', ' three ')
-    s = s.replace('4', ' four ')
-    s = s.replace('5', ' five ')
-    s = s.replace('6', ' six ')
-    s = s.replace('7', ' seven ')
-    s = s.replace('8', ' eight ')
-    s = s.replace('9', ' nine ')
+    # Remove punctuation.
+    s = re.sub(r'[^\w\s]', ' ', s)
+    # Replace newline characters
+    s = s.replace('\n', ' ')
+    s = s.replace('\n\n', ' ')
+    # Remove multiple spaces
+    s = ' '.join(s.split())
     return s
 
 
@@ -67,7 +64,7 @@ def load_data(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN):
     tokenizer.fit_on_texts(data_set[TEXT_KEY])
     word_index = tokenizer.word_index
 
-    x_train = pad_sequences(tokenizer.texts_to_sequences(data_set[TEXT_KEY].fillna("fillna").values), maxlen=sequence_length)
+    x_train = pad_sequences(tokenizer.texts_to_sequences(data_set[TEXT_KEY].fillna(' ').values), maxlen=sequence_length)
     y_train = data_set[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
 
     return (x_train, y_train), word_index, tokenizer
@@ -107,7 +104,7 @@ def load_test_data(path, tokenizer, sequence_length=MAX_SEQ_LEN):
 
     new_df = new_df.append(rows)
     test_set = new_df
-    test_set = test_set[TEXT_KEY].fillna("fillna").values
+    test_set = test_set[TEXT_KEY].fillna(' ').values
 
     test_set = tokenizer.texts_to_sequences(test_set)
     test_set = pad_sequences(test_set, maxlen=sequence_length)
