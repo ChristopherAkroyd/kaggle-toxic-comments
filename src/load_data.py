@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import re
+import tqdm
 from sklearn.model_selection import train_test_split, KFold
 
 # Tokenize and sequence padding.
@@ -12,23 +13,30 @@ MAX_SEQ_LEN = 100
 MAX_FEATS = 15000
 TEXT_KEY = 'comment_text'
 
+url_regex = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+ip_regex = re.compile('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
+isolate_punctuation_regex = re.compile('([\'\"\.\(\)\!\?\-\\\/\,])')
+special_character_regex = re.compile('([\;\:\|•«\n])')
+punctuation_regex = re.compile('[^\w\s]')
+numbers_regex = re.compile('^\d+\s|\s\d+\s|\s\d+$')
+
 
 def normalize(s):
-    """
-    Given a text, cleans and normalizes it. Feel free to add your own stuff.
-    """
-    s = s.lower()
     # Replace ips
-    s = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', '<IP> ', s)
+    s = ip_regex.sub(' <IP> ', s)
+    # Replace URLs
+    s = url_regex.sub(' <URL> ', s)
+    # Remove numbers - Idea is they have little effect on toxicity and are basically valueless.
+    s = numbers_regex.sub(' ', s)
     # Isolate punctuation
-    s = re.sub(r'([\'\"\.\(\)\!\?\-\\\/\,])', r' \1 ', s)
+    s = isolate_punctuation_regex.sub(r' \1 ', s)
     # Remove some special characters
-    s = re.sub(r'([\;\:\|•«\n])', ' ', s)
+    s = special_character_regex.sub(' ', s)
     # Replace numbers and symbols with language
     s = s.replace('&', ' and ')
     s = s.replace('@', ' at ')
     # Remove punctuation.
-    s = re.sub(r'[^\w\s]', ' ', s)
+    s = punctuation_regex.sub(' ', s)
     # Replace newline characters
     s = s.replace('\n', ' ')
     s = s.replace('\n\n', ' ')

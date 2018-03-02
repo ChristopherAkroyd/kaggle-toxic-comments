@@ -15,10 +15,7 @@ def get_save_path(model, directory='./model_checkpoints', fold=None):
     return path
 
 
-def get_submission_path(model, directory='./'):
+def get_submission_path(model):
     model_name = model.__class__.__name__
-    path = directory + '{}_submission.csv'.format(model_name)
-    # create dirs if they don't exist.
-    pathlib.Path(directory + '{}_submission.csv'.format(model_name)).mkdir(parents=True, exist_ok=True)
-
+    path = '{}_submission.csv'.format(model_name)
     return path

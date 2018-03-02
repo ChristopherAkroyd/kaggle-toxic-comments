@@ -1,5 +1,5 @@
-from keras.layers import Input, Dense, Embedding, Bidirectional, SpatialDropout1D, \
-    GaussianNoise, CuDNNGRU, concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D, Dropout
+from keras.layers import Input, Dense, Embedding, SpatialDropout1D, GaussianNoise,\
+    GlobalAveragePooling1D, GlobalMaxPooling1D
 from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Adam
@@ -11,7 +11,7 @@ LEARN_RATE = 0.001
 NUM_CLASSES = 12
 
 
-class BidirectionalGRUMaxAvg:
+class DPCNN:
     def __init__(self, num_classes=NUM_CLASSES):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
@@ -26,15 +26,7 @@ class BidirectionalGRUMaxAvg:
         spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
 
         noise = GaussianNoise(0.2)(spatial_dropout_1)
-        bi_gru_1 = Bidirectional(CuDNNGRU(512, return_sequences=True, recurrent_regularizer=l2(0.0001),
-                                          kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001)))(noise)
 
-        bi_gru_1 = SpatialDropout1D(0.5)(bi_gru_1)
-
-        avg_pool = GlobalAveragePooling1D()(bi_gru_1)
-        max_pool = GlobalMaxPooling1D()(bi_gru_1)
-
-        conc = concatenate([max_pool, avg_pool])
 
         outputs = Dense(self.num_classes, activation='sigmoid')(conc)
 

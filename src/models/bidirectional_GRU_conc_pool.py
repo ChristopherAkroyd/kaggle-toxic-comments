@@ -1,5 +1,5 @@
 from keras.layers import Input, Dense, Embedding, Bidirectional, SpatialDropout1D, \
-    GaussianNoise, CuDNNGRU, concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D, Dropout
+    GaussianNoise, CuDNNGRU, concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D
 from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Nadam
@@ -7,7 +7,8 @@ from keras.optimizers import Nadam
 # HPARAMs
 BATCH_SIZE = 128
 EPOCHS = 50
-LEARN_RATE = 0.001
+# LEARN_RATE = 0.0001
+LEARN_RATE = 0.0005
 NUM_CLASSES = 12
 
 
@@ -40,9 +41,7 @@ class BidirectionalGRUConcPool:
 
         conc = concatenate([last_state, max_pool, avg_pool], name='conc_pool')
 
-        drop_1 = Dropout(0.3)(conc)
-
-        outputs = Dense(self.num_classes, activation='sigmoid')(drop_1)
+        outputs = Dense(self.num_classes, activation='sigmoid')(conc)
 
         model = Model(inputs=input, outputs=outputs)
 

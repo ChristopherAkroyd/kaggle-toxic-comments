@@ -48,7 +48,7 @@ embedding_matrix = load_embedding_matrix(glove_path=glove_path,
 
 vocab_size = len(word_index) + 1
 
-model_instance = GRUConcPool(num_classes=num_classes)
+model_instance = BidirectionalGRUConcPool(num_classes=num_classes)
 
 print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
 print('Number of Classes: ' + str(num_classes))
