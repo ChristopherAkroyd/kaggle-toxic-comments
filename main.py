@@ -72,7 +72,8 @@ if TRAIN:
     model = model_instance.build(vocab_size,
                                  embedding_matrix,
                                  input_length=x_train.shape[1],
-                                 embed_dim=embedding_dimension)
+                                 embed_dim=embedding_dimension,
+                                 summary=False)
 
     checkpoint = ModelCheckpoint(get_save_path(model_instance), save_best_only=True)
 
@@ -90,6 +91,8 @@ if TRAIN:
     if FOLDS > 0:
         # Store initial weights
         init_weights = model.get_weights()
+
+        print('Running {}-Fold Cross Validation..'.format(FOLDS))
 
         for i, (train, test) in enumerate(folds):
             print('Fold:' + str(i + 1))
@@ -112,6 +115,8 @@ if TRAIN:
         K.clear_session()
     else:
         roc_auc = RocAucEvaluation(validation_data=(x_val, y_val), interval=1)
+
+        print('Training Model...')
 
         model.fit(x=x_train,
                   y=y_train,

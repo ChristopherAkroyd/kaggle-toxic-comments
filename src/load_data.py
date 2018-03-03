@@ -8,26 +8,24 @@ from sklearn.model_selection import train_test_split, KFold
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 # preprocessing dict
-from src.util import get_word_lookup_dict
-
-
+from src.util import WORD_LOOKUP
 RANDOM_SEED = 233
 MAX_SEQ_LEN = 100
 MAX_FEATS = 15000
 REMOVE_NUMBERS = False
 TEXT_KEY = 'comment_text'
-WORD_LOOKUP = get_word_lookup_dict()
 
 url_regex = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 ip_regex = re.compile('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
 isolate_punctuation_regex = re.compile('([\'\"\.\(\)\!\?\-\\\/\,])')
 special_character_regex = re.compile('([\;\:\|•«\n])')
-punctuation_regex = re.compile('[^\w\s]')
+punctuation_regex = re.compile('[.,\\\/#!$%\^&;:{}=\-_`~()<>|\[\]]')
 numbers_regex = re.compile('^\d+\s|\s\d+\s|\s\d+$')
 users_regex = re.compile('\[\[.*\]')
 
 
 def normalize(s):
+    s = s.lower()
     # Replace ips
     s = ip_regex.sub(' <IP> ', s)
     # Replace URLs
@@ -44,13 +42,14 @@ def normalize(s):
     # Replace numbers and symbols with language
     s = s.replace('&', ' and ')
     s = s.replace('@', ' at ')
-    # Remove punctuation.
-    s = punctuation_regex.sub(' ', s)
     # Replace newline characters
     s = s.replace('\n', ' ')
     s = s.replace('\n\n', ' ')
+    # Remove punctuation.
+    s = punctuation_regex.sub(' ', s)
     # Split the string to replace apostrophes etc.
     s = s.split()
+
     s = [WORD_LOOKUP[word] if word in WORD_LOOKUP else word for word in s]
 
     # Remove multiple spaces

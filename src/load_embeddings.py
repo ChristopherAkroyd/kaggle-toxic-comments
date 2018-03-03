@@ -5,7 +5,7 @@ from tqdm import tqdm
 def read_embeddings_file(path, embedding_type):
     embedding_index = {}
     with open(path, 'r', encoding='utf-8') as f:
-        for i, line in enumerate(f):
+        for i, line in tqdm(enumerate(f)):
             # First line is num words/vector size.
             if i == 0 and embedding_type == 'FAST_TEXT':
                 continue
@@ -29,13 +29,15 @@ def load_embedding_matrix(embeddings_index, word_index, embedding_dimensions):
 
 def load_embeddings(path, embedding_type, word_index, embedding_dimensions=300):
     if embedding_type == 'GLOVE' or embedding_type == 'FAST_TEXT':
-        print('Loading {} embeddings from file...'.format(embedding_type))
+        print('Loading {} embeddings...'.format(embedding_type))
     else:
         print('Generating random uniform embeddings...')
         return np.random.uniform(low=-0.05, high=0.05, size=(len(word_index) + 1, embedding_dimensions))
 
+    print('Reading {} file...'.format(embedding_type))
     embedding_index = read_embeddings_file(path, embedding_type)
 
+    print('Generating embedding matrix...')
     embedding_matrix = load_embedding_matrix(embedding_index, word_index, embedding_dimensions)
 
     print('Vocabulary Size: %s words.' % len(embedding_matrix))
