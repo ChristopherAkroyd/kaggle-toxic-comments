@@ -6,7 +6,7 @@ from keras.optimizers import Adam
 
 # HPARAMs
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 15
 LEARN_RATE = 0.001
 CLIP_NORM = 1.0
 NUM_CLASSES = 12
@@ -28,7 +28,8 @@ class GRUConcPool:
 
         noise = GaussianNoise(0.2)(spatial_dropout_1)
         bi_gru_1, last_state = CuDNNGRU(128, return_sequences=True, return_state=True,
-                                        recurrent_regularizer=l2(0.00001))(noise)
+                                        recurrent_regularizer=l2(0.00001),
+                                        kernel_regularizer=l2(0.00001))(noise)
 
         spatial_dropout_2 = SpatialDropout1D(0.5)(bi_gru_1)
 

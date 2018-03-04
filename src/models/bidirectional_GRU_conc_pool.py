@@ -7,7 +7,7 @@ from keras.optimizers import Nadam
 # HPARAMs
 BATCH_SIZE = 128
 EPOCHS = 50
-# LEARN_RATE = 0.0001
+# LEARN_RATE = 0.001
 LEARN_RATE = 0.0005
 NUM_CLASSES = 12
 
@@ -24,14 +24,14 @@ class BidirectionalGRUConcPool:
 
         embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
 
-        spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
+        spatial_dropout_1 = SpatialDropout1D(0.7)(embedding)
 
         noise = GaussianNoise(0.2)(spatial_dropout_1)
         bi_gru_1, last_state_forward, last_state_back = Bidirectional(CuDNNGRU(512, return_sequences=True,
                                                                                return_state=True,
-                                                                               recurrent_regularizer=l2(0.0001),
-                                                                               kernel_regularizer=l2(0.0001),
-                                                                               bias_regularizer=l2(0.0001)))(noise)
+                                                                               recurrent_regularizer=l2(0.001),
+                                                                               kernel_regularizer=l2(0.001),
+                                                                               bias_regularizer=l2(0.001)))(noise)
 
         bi_gru_1 = SpatialDropout1D(0.5)(bi_gru_1)
 
