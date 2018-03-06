@@ -19,6 +19,7 @@ from src.write_results import write_results
 from src.util import get_save_path
 # Model definition
 from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
+from src.models.bidirectional_GRU_max_avg import BidirectionalGRUMaxAvg
 # Custom Layers
 from src.layers.Attention import FeedForwardAttention
 
@@ -63,7 +64,7 @@ embedding_matrix = load_embeddings(path=embedding_path,
 
 vocab_size = len(tokenizer.word_index) + 1
 
-model_instance = BidirectionalGRUConcPool(num_classes=NUM_CLASSES)
+model_instance = BidirectionalGRUMaxAvg(num_classes=NUM_CLASSES)
 
 print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
 print('Number of Classes: ' + str(NUM_CLASSES))
@@ -78,7 +79,7 @@ if TRAIN:
     checkpoint = ModelCheckpoint(get_save_path(model_instance), save_best_only=True)
 
     early_stop = EarlyStopping(monitor='val_loss',
-                               patience=3,
+                               patience=5,
                                verbose=1,
                                min_delta=0.00001)
 

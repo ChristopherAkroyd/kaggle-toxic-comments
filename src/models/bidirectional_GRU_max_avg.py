@@ -2,12 +2,13 @@ from keras.layers import Input, Dense, Embedding, Bidirectional, SpatialDropout1
     GaussianNoise, CuDNNGRU, concatenate, GlobalAveragePooling1D, GlobalMaxPooling1D, Dropout
 from keras.models import Model
 from keras.regularizers import l2
-from keras.optimizers import Adam
+from keras.optimizers import Adam, Nadam
 
 # HPARAMs
 BATCH_SIZE = 128
 EPOCHS = 50
-LEARN_RATE = 0.001
+# LEARN_RATE = 0.001
+LEARN_RATE = 0.00025
 NUM_CLASSES = 12
 
 
@@ -23,11 +24,11 @@ class BidirectionalGRUMaxAvg:
 
         embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
 
-        spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
+        spatial_dropout_1 = SpatialDropout1D(0.7)(embedding)
 
-        noise = GaussianNoise(0.2)(spatial_dropout_1)
-        bi_gru_1 = Bidirectional(CuDNNGRU(512, return_sequences=True, recurrent_regularizer=l2(0.0001),
-                                          kernel_regularizer=l2(0.0001), bias_regularizer=l2(0.0001)))(noise)
+        noise = GaussianNoise(0.0)(spatial_dropout_1)
+        bi_gru_1 = Bidirectional(CuDNNGRU(512, return_sequences=True, recurrent_regularizer=l2(0.001),
+                                          kernel_regularizer=l2(0.001)))(noise)
 
         bi_gru_1 = SpatialDropout1D(0.5)(bi_gru_1)
 
@@ -46,7 +47,7 @@ class BidirectionalGRUMaxAvg:
         model = self.create_model(vocab_size, embedding_matrix, input_length, embed_dim)
 
         model.compile(loss='binary_crossentropy',
-                      optimizer=Adam(lr=self.LEARN_RATE),
+                      optimizer=Nadam(lr=self.LEARN_RATE),
                       metrics=['accuracy'])
 
         if summary:
