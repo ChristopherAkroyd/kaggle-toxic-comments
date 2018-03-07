@@ -35,14 +35,15 @@ def load_embedding_matrix(embedding_index, word_index, embedding_dimensions):
     return embedding_matrix, oov_count
 
 
-def load_embeddings(path, embedding_type, word_index, embedding_dimensions=300):
+def load_embeddings(path, embedding_type, word_index, embedding_dimensions=300, embedding_index=None):
     if embedding_type == 'GLOVE' or embedding_type == 'FAST_TEXT':
         print('Loading {} embeddings...'.format(embedding_type))
     else:
         print('Generating random uniform embeddings...')
         return np.random.uniform(low=-0.05, high=0.05, size=(len(word_index) + 1, embedding_dimensions))
 
-    embedding_index = read_embeddings_file(path, embedding_type)
+    if embedding_index is None:
+        embedding_index = read_embeddings_file(path, embedding_type)
 
     embedding_matrix, oov_count = load_embedding_matrix(embedding_index, word_index, embedding_dimensions)
 

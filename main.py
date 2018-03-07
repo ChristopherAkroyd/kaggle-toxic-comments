@@ -19,7 +19,6 @@ from src.write_results import write_results
 from src.util import get_save_path
 # Model definition
 from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
-from src.models.bidirectional_GRU_max_avg import BidirectionalGRUMaxAvg
 # Custom Layers
 from src.layers.Attention import FeedForwardAttention
 
@@ -49,13 +48,13 @@ else:
 
 if FOLDS > 0:
     (x_train, y_train), folds, tokenizer = load_data_folds(path=train_path,
-                                                                         folds=FOLDS,
-                                                                         max_features=MAX_FEATS,
-                                                                         sequence_length=SEQUENCE_LENGTH)
+                                                           folds=FOLDS,
+                                                           max_features=MAX_FEATS,
+                                                           sequence_length=SEQUENCE_LENGTH)
 else:
     (x_train, y_train), (x_val, y_val), tokenizer = load_data_split(path=train_path,
-                                                                                  max_features=MAX_FEATS,
-                                                                                  sequence_length=SEQUENCE_LENGTH)
+                                                                    max_features=MAX_FEATS,
+                                                                    sequence_length=SEQUENCE_LENGTH)
 
 embedding_matrix = load_embeddings(path=embedding_path,
                                    embedding_type=EMBEDDINGS,
@@ -64,7 +63,7 @@ embedding_matrix = load_embeddings(path=embedding_path,
 
 vocab_size = len(tokenizer.word_index) + 1
 
-model_instance = BidirectionalGRUMaxAvg(num_classes=NUM_CLASSES)
+model_instance = BidirectionalGRUConcPool(num_classes=NUM_CLASSES)
 
 print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
 print('Number of Classes: ' + str(NUM_CLASSES))

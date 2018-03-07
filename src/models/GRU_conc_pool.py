@@ -28,8 +28,8 @@ class GRUConcPool:
 
         noise = GaussianNoise(0.2)(spatial_dropout_1)
         bi_gru_1, last_state = CuDNNGRU(128, return_sequences=True, return_state=True,
-                                        recurrent_regularizer=l2(0.00001),
-                                        kernel_regularizer=l2(0.00001))(noise)
+                                        recurrent_regularizer=l2(0.0001),
+                                        kernel_regularizer=l2(0.0001))(noise)
 
         spatial_dropout_2 = SpatialDropout1D(0.5)(bi_gru_1)
 
