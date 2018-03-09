@@ -23,12 +23,9 @@ class LSTMCNN:
 
         embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
 
-        spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
+        spatial_dropout_1 = SpatialDropout1D(0.2)(embedding)
 
-        bi_lstm = Bidirectional(CuDNNLSTM(128,
-                                          return_sequences=True,
-                                          recurrent_regularizer=l2(0.001),
-                                          kernel_regularizer=l2(0.001)))(spatial_dropout_1)
+        bi_lstm = Bidirectional(CuDNNLSTM(128, return_sequences=True))(spatial_dropout_1)
 
         bi_lstm = SpatialDropout1D(0.5)(bi_lstm)
 

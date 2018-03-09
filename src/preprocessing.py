@@ -56,6 +56,8 @@ class TextPreProcessor:
             self.vocab = vocab
             self.spellchecker = SpellChecker(vocab)
             self.word_segmenter = WordSegmentation()
+            print('Vocab Loaded into preprocessor, enabling spell checking and OOV word segmentation...')
+
             return True
         return False
 
@@ -67,6 +69,9 @@ class TextPreProcessor:
 
     def clean(self, s):
         s = s.lower()
+
+        # s = ' '.join(s.split('-'))
+        # s = ' '.join(s.split('_'))
 
         # Replace ips
         s = ip_regex.sub(' <IP> ', s)

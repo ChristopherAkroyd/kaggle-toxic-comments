@@ -28,7 +28,7 @@ MAX_FEATS = 200000
 SEQUENCE_LENGTH = 200
 EMBEDDINGS = 'GLOVE'
 NUM_CLASSES = 6
-FOLDS = -1
+FOLDS = 10
 
 # Paths to data sets
 train_path = './data/train.csv'
@@ -36,6 +36,7 @@ test_path = './data/test.csv'
 submission_path = './data/sample_submission.csv'
 # Paths to glove embeddings.
 glove_path = './data/embeddings/glove.42B.300d.txt'
+# glove_path = './data/embeddings/glove.840B.300d.txt'
 fast_text_path = './data/embeddings/crawl-300d-2M.vec'
 embedding_dimension = 300
 
