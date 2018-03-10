@@ -1,8 +1,9 @@
-from keras.layers import Input, Dense, Embedding, SpatialDropout1D, GaussianNoise, CuDNNGRU, concatenate,\
-    GlobalAveragePooling1D, GlobalMaxPooling1D
+from keras.layers import Input, Dense, SpatialDropout1D, CuDNNGRU
 from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Adam
+
+from src.models.TextModel import ConcPoolModel
 
 # HPARAMs
 BATCH_SIZE = 32
@@ -12,7 +13,7 @@ CLIP_NORM = 1.0
 NUM_CLASSES = 12
 
 
-class GRUConcPool:
+class GRUConcPool(ConcPoolModel):
     def __init__(self, num_classes=NUM_CLASSES):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
@@ -20,26 +21,22 @@ class GRUConcPool:
         self.num_classes = num_classes
 
     def create_model(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200):
-        input = Input(shape=(input_length, ))
+        rnn_input = Input(shape=(input_length,))
+        embedding = self.embedding_layers(rnn_input, vocab_size, embedding_matrix,
+                                          dropout=0.5, noise=0.2,
+                                          input_length=input_length, embed_dim=embed_dim)
 
-        embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
-
-        spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
-
-        noise = GaussianNoise(0.2)(spatial_dropout_1)
         bi_gru_1, last_state = CuDNNGRU(128, return_sequences=True, return_state=True,
                                         recurrent_regularizer=l2(0.0001),
-                                        kernel_regularizer=l2(0.0001))(noise)
+                                        kernel_regularizer=l2(0.0001))(embedding)
 
         spatial_dropout_2 = SpatialDropout1D(0.5)(bi_gru_1)
 
-        avg_pool = GlobalAveragePooling1D()(spatial_dropout_2)
-        max_pool = GlobalMaxPooling1D()(spatial_dropout_2)
-        conc = concatenate([avg_pool, max_pool, last_state], name='conc_pool')
+        conc = self.concatenate_pool(spatial_dropout_2, last_state)
 
         outputs = Dense(self.num_classes, activation='sigmoid')(conc)
 
-        model = Model(inputs=input, outputs=outputs)
+        model = Model(inputs=rnn_input, outputs=outputs)
 
         return model
 

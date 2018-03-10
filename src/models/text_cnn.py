@@ -1,8 +1,8 @@
-from keras.layers import Input, Dense, Embedding, SpatialDropout1D, GaussianNoise, BatchNormalization,\
-    Activation, Conv1D, concatenate, MaxPool1D, GlobalMaxPool1D, Flatten
+from keras.layers import Input, Dense, concatenate, MaxPool1D, GlobalMaxPool1D
 from keras.models import Model
-from keras.regularizers import l2
 from keras.optimizers import Adam
+
+from src.models.TextModel import CNNModel
 
 # HPARAMs
 BATCH_SIZE = 32
@@ -11,7 +11,7 @@ LEARN_RATE = 0.00025
 NUM_CLASSES = 12
 
 
-class TextCNN:
+class TextCNN(CNNModel):
     def __init__(self, num_classes=NUM_CLASSES):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
@@ -19,33 +19,25 @@ class TextCNN:
         self.num_classes = num_classes
 
     def create_model(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200):
-        input = Input(shape=(input_length, ))
+        rnn_input = Input(shape=(input_length,))
 
-        embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
+        embedding = self.embedding_layers(rnn_input, vocab_size, embedding_matrix,
+                                          dropout=0.5, noise=0.2,
+                                          input_length=input_length, embed_dim=embed_dim)
 
-        spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
-
-        conv_2 = Conv1D(128, kernel_size=2, padding='same', kernel_regularizer=l2(0.0001))(spatial_dropout_1)
-        conv_2 = BatchNormalization()(conv_2)
-        conv_2 = Activation('relu')(conv_2)
+        conv_2 = self.convolutional_block(embedding, 128, 2, batch_norm=True, reg=0.0001)
         max_2 = MaxPool1D()(conv_2)
         max_2 = GlobalMaxPool1D()(max_2)
 
-        conv_3 = Conv1D(128, kernel_size=3, padding='same', kernel_regularizer=l2(0.0001))(spatial_dropout_1)
-        conv_3 = BatchNormalization()(conv_3)
-        conv_3 = Activation('relu')(conv_3)
+        conv_3 = self.convolutional_block(embedding, 128, 3, batch_norm=True, reg=0.0001)
         max_3 = MaxPool1D()(conv_3)
         max_3 = GlobalMaxPool1D()(max_3)
 
-        conv_4 = Conv1D(128, kernel_size=4, padding='same', kernel_regularizer=l2(0.0001))(spatial_dropout_1)
-        conv_4 = BatchNormalization()(conv_4)
-        conv_4 = Activation('relu')(conv_4)
+        conv_4 = self.convolutional_block(embedding, 128, 4, batch_norm=True, reg=0.0001)
         max_4 = MaxPool1D()(conv_4)
         max_4 = GlobalMaxPool1D()(max_4)
 
-        conv_5 = Conv1D(128, kernel_size=5, padding='same', kernel_regularizer=l2(0.0001))(spatial_dropout_1)
-        conv_5 = BatchNormalization()(conv_5)
-        conv_5 = Activation('relu')(conv_5)
+        conv_5 = self.convolutional_block(embedding, 128, 5, batch_norm=True, reg=0.0001)
         max_5 = MaxPool1D()(conv_5)
         max_5 = GlobalMaxPool1D()(max_5)
 
@@ -53,7 +45,7 @@ class TextCNN:
 
         outputs = Dense(self.num_classes, activation='sigmoid')(conc)
 
-        model = Model(inputs=input, outputs=outputs)
+        model = Model(inputs=rnn_input, outputs=outputs)
 
         return model
 

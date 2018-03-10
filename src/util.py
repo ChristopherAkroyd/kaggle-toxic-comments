@@ -3,7 +3,12 @@ from tqdm import tqdm
 
 GLOVE_WORD_LOOKUP = {
     # Domain specific
+    "mainpagebg": " ",
+    "concernthanks": "concern thanks",
+    "gayfrozen": "gay frozen",
+    "talkcontribs": "talk contributions",
     "tryin'": "trying",
+    "gayfag": "gay fag",
     "f**k": "fuck",
     "s**t": "shit",
     "f***": "fuck",

@@ -4,6 +4,8 @@ from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Adam
 
+from src.models.TextModel import CNNModel
+
 # HPARAMs
 BATCH_SIZE = 128
 EPOCHS = 50
@@ -11,7 +13,7 @@ LEARN_RATE = 0.001
 NUM_CLASSES = 12
 
 
-class DPCNN:
+class DPCNN(CNNModel):
     def __init__(self, num_classes=NUM_CLASSES):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
