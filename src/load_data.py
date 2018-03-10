@@ -49,6 +49,9 @@ def load_data(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN, vocab=N
     x_train = pad_sequences(tokenizer.texts_to_sequences(data_set[TEXT_KEY].fillna(' ').values), maxlen=sequence_length)
     y_train = data_set[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
 
+    print('Number of Data Samples:' + str(len(x_train)))
+    print('Number of Classes: ' + str(6))
+
     return (x_train, y_train), tokenizer
 
 

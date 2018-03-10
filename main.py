@@ -28,7 +28,7 @@ MAX_FEATS = 200000
 SEQUENCE_LENGTH = 200
 EMBEDDINGS = 'GLOVE'
 NUM_CLASSES = 6
-FOLDS = 10
+FOLDS = -1
 
 # Paths to data sets
 train_path = './data/train.csv'
@@ -65,9 +65,6 @@ embedding_matrix = load_embeddings(path=embedding_path,
 vocab_size = len(tokenizer.word_index) + 1
 
 model_instance = BidirectionalGRUConcPool(num_classes=NUM_CLASSES)
-
-print('Number of Data Samples:' + str(len(x_train) + len(x_val)))
-print('Number of Classes: ' + str(NUM_CLASSES))
 
 if TRAIN:
     model = model_instance.build(vocab_size,
