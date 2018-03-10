@@ -60,6 +60,7 @@ else:
 embedding_matrix = load_embeddings(path=embedding_path,
                                    embedding_type=EMBEDDINGS,
                                    word_index=tokenizer.word_index,
+                                   max_features=MAX_FEATS,
                                    embedding_dimensions=embedding_dimension)
 
 vocab_size = len(tokenizer.word_index) + 1

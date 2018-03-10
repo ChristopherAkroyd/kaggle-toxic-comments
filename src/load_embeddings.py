@@ -10,18 +10,19 @@ def read_embeddings_file(path, embedding_type):
             # First line is num words/vector size.
             if i == 0 and embedding_type == 'FAST_TEXT':
                 continue
-            values = line.split()
+            values = line.strip().split()
             word = values[0]
             coefs = np.asarray(values[1:], dtype='float32')
             embedding_index[word] = coefs
     return embedding_index
 
 
-def load_embedding_matrix(embedding_index, word_index, embedding_dimensions):
+def load_embedding_matrix(embedding_index, word_index, max_features, embedding_dimensions):
     print('Generating embedding matrix...')
     embedding_matrix = np.zeros((len(word_index) + 1, embedding_dimensions))
     oov_count = 0
     for word, i in tqdm(word_index.items()):
+        if i > max_features: continue
         embedding_vector = embedding_index.get(word)
         if embedding_vector is not None:
             # words not found in embedding index will be all-zeros.
@@ -35,7 +36,7 @@ def load_embedding_matrix(embedding_index, word_index, embedding_dimensions):
     return embedding_matrix, oov_count
 
 
-def load_embeddings(path, embedding_type, word_index, embedding_dimensions=300, embedding_index=None):
+def load_embeddings(path, embedding_type, word_index, max_features, embedding_dimensions=300, embedding_index=None):
     if embedding_type == 'GLOVE' or embedding_type == 'FAST_TEXT':
         print('Loading {} embeddings...'.format(embedding_type))
     else:
@@ -45,7 +46,7 @@ def load_embeddings(path, embedding_type, word_index, embedding_dimensions=300, 
     if embedding_index is None:
         embedding_index = read_embeddings_file(path, embedding_type)
 
-    embedding_matrix, oov_count = load_embedding_matrix(embedding_index, word_index, embedding_dimensions)
+    embedding_matrix, oov_count = load_embedding_matrix(embedding_index, word_index, max_features, embedding_dimensions)
 
     return embedding_matrix
 

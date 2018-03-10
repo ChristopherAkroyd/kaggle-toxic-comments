@@ -1,11 +1,17 @@
 import re
 from wordsegment import load, segment, clean
+from nltk import download
+from nltk.corpus import stopwords
+
 # pre-processing dict
 from src.util import GLOVE_WORD_LOOKUP
 from src.regexes import REGEX_LOOKUP
 
+download('stopwords')
 
-REMOVE_NUMBERS = False
+REMOVE_STOPWORDS = True
+STOPWORDS = stopwords.words('english')
+
 
 # Preprocessing Regex's
 url_regex = re.compile(REGEX_LOOKUP['URL'])
@@ -140,6 +146,9 @@ class TextPreProcessor:
         new_string = []
 
         for word in s:
+            if REMOVE_STOPWORDS and word in stopwords:
+                continue
+
             if word in GLOVE_WORD_LOOKUP:
                 new_string.append(GLOVE_WORD_LOOKUP[word])
             elif self.vocab is not None and word not in self.vocab:
@@ -180,6 +189,7 @@ class TextPreProcessor:
         # Remove multiple spaces
         s = ' '.join(new_string)
         return s
+
 
 # https://www.kaggle.com/cpmpml/spell-checker-using-word2vec
 class SpellChecker:
