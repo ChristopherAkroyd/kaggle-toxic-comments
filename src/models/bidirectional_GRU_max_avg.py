@@ -26,9 +26,8 @@ class BidirectionalGRUMaxAvg:
 
         spatial_dropout_1 = SpatialDropout1D(0.7)(embedding)
 
-        noise = GaussianNoise(0.0)(spatial_dropout_1)
         bi_gru_1 = Bidirectional(CuDNNGRU(512, return_sequences=True, recurrent_regularizer=l2(0.001),
-                                          kernel_regularizer=l2(0.001)))(noise)
+                                          kernel_regularizer=l2(0.001)))(spatial_dropout_1)
 
         bi_gru_1 = SpatialDropout1D(0.5)(bi_gru_1)
 

@@ -28,7 +28,7 @@ MAX_FEATS = 200000
 SEQUENCE_LENGTH = 200
 EMBEDDINGS = 'GLOVE'
 NUM_CLASSES = 6
-FOLDS = 10
+FOLDS = -1
 
 # Paths to data sets
 train_path = './data/train.csv'
@@ -60,6 +60,7 @@ else:
 embedding_matrix = load_embeddings(path=embedding_path,
                                    embedding_type=EMBEDDINGS,
                                    word_index=tokenizer.word_index,
+                                   max_features=MAX_FEATS,
                                    embedding_dimensions=embedding_dimension)
 
 vocab_size = len(tokenizer.word_index) + 1

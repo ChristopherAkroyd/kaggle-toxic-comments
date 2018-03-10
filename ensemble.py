@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
 WRITE_COEFFICIENTS = True
 WRITE_RESULTS = True
 
@@ -31,7 +30,7 @@ def correlation_coefficients():
                            gru_attention[label].rank(pct=True)]))
 
 
-def ensemble_predictions():
+def weighted_ensemble_predictions():
     submission = pd.DataFrame()
     submission['id'] = bi_gru_conc_pool['id']
 
@@ -44,11 +43,30 @@ def ensemble_predictions():
                             lstm_cnn[label].rank(pct=True) * 0.1 + \
                             gru_attention[label].rank(pct=True) * 0.025
 
-    submission.to_csv('weighted_ensemble_7_models.csv', index=False)
+    submission.to_csv('weighted_average.csv', index=False)
+
+
+def voting_ensemble_predictions():
+    submission = pd.DataFrame()
+    submission['id'] = bi_gru_conc_pool['id']
+
+    for label in labels:
+        best = bi_gru_conc_pool[label].rank(pct=True) * 3
+
+        submission[label] = (best +
+                             double_bi_gru_conc_pool[label].rank(pct=True) +
+                             bi_gru_max_avg[label].rank(pct=True) +
+                             gru_conc_pool[label].rank(pct=True) +
+                             text_cnn[label].rank(pct=True) +
+                             lstm_cnn[label].rank(pct=True) +
+                             gru_attention[label].rank(pct=True)) / 9
+
+    submission.to_csv('voting_average.csv', index=False)
 
 
 if __name__ == "__main__":
     if WRITE_COEFFICIENTS:
         correlation_coefficients()
     if WRITE_RESULTS:
-        ensemble_predictions()
+        weighted_ensemble_predictions()
+        voting_ensemble_predictions()
