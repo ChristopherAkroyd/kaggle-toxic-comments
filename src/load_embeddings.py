@@ -10,7 +10,7 @@ def read_embeddings_file(path, embedding_type):
             # First line is num words/vector size.
             if i == 0 and embedding_type == 'FAST_TEXT':
                 continue
-            values = line.strip().split()
+            values = line.strip().split(' ')
             word = values[0]
             coefs = np.asarray(values[1:], dtype='float32')
             embedding_index[word] = coefs

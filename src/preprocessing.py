@@ -9,9 +9,8 @@ from src.regexes import REGEX_LOOKUP
 
 download('stopwords')
 
-REMOVE_STOPWORDS = True
-STOPWORDS = stopwords.words('english')
-
+REMOVE_STOPWORDS = False
+STOPWORDS = set(stopwords.words('english'))
 
 # Preprocessing Regex's
 url_regex = re.compile(REGEX_LOOKUP['URL'])
@@ -22,8 +21,7 @@ email_regex = re.compile(REGEX_LOOKUP['EMAIL'])
 time_regex = re.compile(REGEX_LOOKUP['TIME'])
 money_regex = re.compile(REGEX_LOOKUP['MONEY'])
 
-special_character_regex = re.compile('([\;\:\|•«»\n←])')
-# punctuation_regex = re.compile('[.,\\\/⁄#!°·?%\^"“”˜¯&;:{}=\-–—…‖_`≤~()<>|\[\]]')
+special_character_regex = re.compile('([\;\:\|•«»\n←→])')
 users_regex = re.compile('\[\[.*\]')
 
 s_contraction = re.compile('\'s')
@@ -35,6 +33,9 @@ nt_contraction = re.compile('n\'t')
 ve_contraction = re.compile('\'ve')
 re_contraction = re.compile('\'re')
 
+cant_replace = re.compile('(can\'t)')
+wont_replace = re.compile('(won\'t)')
+
 apostrophe_normalise_regex = re.compile('[‘´’]')
 
 # Remove all non-contraction apostrophes
@@ -43,7 +44,13 @@ apostrophe_removal_regex_fast_text = re.compile("[']")
 
 alphanumeric_only = re.compile("(?!('s)|('d)|('m)|('ll)|(n't)|('ve)|('re))[^\w\s]")
 
-alpha_test = re.compile("[^\w\s.,?!%^;:{}=+\-_`~()<>|\[\]]")
+# alpha_test = re.compile("[^\w\s.,?!%^;:{}=+\-_`~()<>|\[\]]")
+alpha_test = re.compile("[^\w\s.,?!<>]")
+
+arrows = re.compile('[<>_]')
+
+tokenize_punct = re.compile('([.,?!]{1})')
+control_chars = re.compile('[\n\t\r\v\f\0]')
 
 
 class TextPreProcessor:
@@ -76,8 +83,7 @@ class TextPreProcessor:
     def clean(self, s):
         s = s.lower()
 
-        # s = ' '.join(s.split('-'))
-        # s = ' '.join(s.split('_'))
+        s = arrows.sub(' ', s)
 
         # Replace ips
         s = ip_regex.sub(' <IP> ', s)
@@ -93,6 +99,8 @@ class TextPreProcessor:
         # Replace money symbols
         s = money_regex.sub('', s)
 
+        s = tokenize_punct.sub(r' \1 ', s)
+
         # Remove a load of unicode emoji characters
         s = emoji_regex.sub('', s)
 
@@ -101,6 +109,9 @@ class TextPreProcessor:
 
         # Glove records contractions individually e.g. don't -> do n't, therefore if using glove follow the
         if self.embedding_type == 'GLOVE' or True:
+            s = cant_replace.sub(' can not ', s)
+            s = wont_replace.sub(' will not ', s)
+
             # Replace contractions
             s = s_contraction.sub(" is ", s)
             s = d_contraction.sub(" would ", s)
@@ -112,7 +123,7 @@ class TextPreProcessor:
             s = re_contraction.sub(" are ", s)
 
             # Remove all now non-essential apostrophes.
-            # s = apostrophe_removal_regex_glove.sub('', s)
+            s = apostrophe_removal_regex_glove.sub('', s)
         else:
             # Other embeddings e.g. fast text just remove punctuation.
             s = apostrophe_removal_regex_fast_text.sub('', s)
@@ -125,18 +136,15 @@ class TextPreProcessor:
         # Replace numbers and symbols with language
         s = s.replace('&', ' and ')
         # Replace newline characters
-        s = s.replace('\n', ' ')
-        s = s.replace('\n\n', ' ')
-
-        s = s.replace('\t', ' ')
+        s = control_chars.sub(' ', s)
         s = s.replace('\b', ' ')
-        s = s.replace('\r', ' ')
         # Remove punctuation.
         s = alpha_test.sub(' ', s)
         # Remove multi spaces
         s = re.sub('\s+', ' ', s)
         # Remove ending space if any
-        s = re.sub('\s+$', '', s)
+        if len(s) > 1:
+            s = re.sub('\s+$', '', s)
 
         return s
 
@@ -146,7 +154,7 @@ class TextPreProcessor:
         new_string = []
 
         for word in s:
-            if REMOVE_STOPWORDS and word in stopwords:
+            if REMOVE_STOPWORDS and word in STOPWORDS:
                 continue
 
             if word in GLOVE_WORD_LOOKUP:

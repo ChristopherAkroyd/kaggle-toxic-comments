@@ -1,5 +1,4 @@
-from keras.layers import Input, Dense, Embedding, SpatialDropout1D, GaussianNoise,\
-    GlobalAveragePooling1D, GlobalMaxPooling1D, Conv1D, BatchNormalization, Activation, add, MaxPooling1D
+from keras.layers import Input, Dense, GlobalMaxPooling1D, Conv1D, add, MaxPooling1D, Dropout
 from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Adam
@@ -9,8 +8,9 @@ from src.models.TextModel import CNNModel
 # HPARAMs
 BATCH_SIZE = 128
 EPOCHS = 50
-LEARN_RATE = 0.001
+LEARN_RATE = 0.005
 NUM_CLASSES = 12
+DPCNN_DEPTH = 3
 
 
 class DPCNN(CNNModel):
@@ -18,39 +18,43 @@ class DPCNN(CNNModel):
         self.BATCH_SIZE = BATCH_SIZE
         self.EPOCHS = EPOCHS
         self.LEARN_RATE = LEARN_RATE
+        self.DPCNN_DEPTH = DPCNN_DEPTH
         self.num_classes = num_classes
 
     def create_model(self, vocab_size, embedding_matrix, input_length=5000, embed_dim=200):
-        input = Input(shape=(input_length, ))
+        rnn_input = Input(shape=(input_length,))
 
-        embedding = Embedding(vocab_size, embed_dim, weights=[embedding_matrix], input_length=input_length)(input)
+        embedding = self.embedding_layers(rnn_input, vocab_size, embedding_matrix,
+                                          dropout=0.5, noise=0.0,
+                                          input_length=input_length, embed_dim=embed_dim)
 
-        spatial_dropout_1 = SpatialDropout1D(0.5)(embedding)
-
-        conv_block_1 = Conv1D(64, kernel_size=3, padding='same', activation='linear', kernel_reguarlizer=l2(0.001))(spatial_dropout_1)
-        conv_block_1 = BatchNormalization()(conv_block_1)
-        conv_block_1 = SpatialDropout1D(0.2)(conv_block_1)
-        conv_block_1 = Activation('relu')(conv_block_1)
-
-        conv_block_2 = Conv1D(64, kernel_size=3, padding='same', activation='linear', kernel_reguarlizer=l2(0.001))(
-            conv_block_1)
-        conv_block_2 = BatchNormalization()(conv_block_2)
-        conv_block_2 = SpatialDropout1D(0.2)(conv_block_2)
-        conv_block_2 = Activation('relu')(conv_block_2)
+        conv_block_1 = self.convolutional_block(embedding, filters=64, batch_norm=True, dropout=0.2, reg=0.00001)
+        conv_block_2 = self.convolutional_block(conv_block_1, filters=64, batch_norm=True, dropout=0.2, reg=0.00001)
 
         shape_conv = Conv1D(64, kernel_size=1, padding='same', activation='relu', kernel_regularizer=l2(0.001))(embedding)
 
         first_stage_out = add([shape_conv, conv_block_2])
 
-        x = MaxPooling1D(pool_size=3, strides=2)(first_stage_out)
+        dpcnn_stage = first_stage_out
 
+        for i in range(self.DPCNN_DEPTH):
+            dpcnn_pool = MaxPooling1D(pool_size=3, strides=2)(dpcnn_stage)
+            dpcnn_block = self.convolutional_block(dpcnn_pool, filters=64,
+                                                   batch_norm=True, dropout=0.2, reg=0.00001)
 
+            dpcnn_block = self.convolutional_block(dpcnn_block, filters=64,
+                                                   batch_norm=True, dropout=0.2, reg=0.00001)
 
+            dpcnn_stage = add([dpcnn_block, dpcnn_pool])
 
+        max_pool = GlobalMaxPooling1D()(dpcnn_stage)
 
-        outputs = Dense(self.num_classes, activation='sigmoid')(conc)
+        dense_1 = Dense(256, kernel_regularizer=l2(0.00001))(max_pool)
+        drop_1 = Dropout(0.5)(dense_1)
 
-        model = Model(inputs=input, outputs=outputs)
+        outputs = Dense(self.num_classes, activation='sigmoid')(drop_1)
+
+        model = Model(inputs=rnn_input, outputs=outputs)
 
         return model
 

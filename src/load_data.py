@@ -11,8 +11,9 @@ from src.preprocessing import TextPreProcessor
 RANDOM_SEED = 233
 MAX_SEQ_LEN = 100
 MAX_FEATS = 15000
-REMOVE_NUMBERS = False
+PRE_PROCESS = True
 TEXT_KEY = 'comment_text'
+CLASS_KEYS = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
 
 preprocessor = TextPreProcessor(embedding_type='GLOVE')
 
@@ -26,7 +27,12 @@ def pre_process(df, mode='train'):
     # @TODO Revist with a fresh perspective.
     for index, tweet in tqdm(df.iterrows()):
         try:
-            tweet[TEXT_KEY] = preprocessor.preprocess(tweet[TEXT_KEY], mode)
+            if PRE_PROCESS:
+                text = preprocessor.preprocess(tweet[TEXT_KEY], mode)
+            else:
+                text = tweet[TEXT_KEY]
+
+            tweet[TEXT_KEY] = text
             rows.append(tweet)
         except:
             pass
@@ -36,35 +42,44 @@ def pre_process(df, mode='train'):
     return new_df
 
 
-def load_data(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN, vocab=None):
+def load_data(path, max_features=MAX_FEATS, vocab=None):
     df = pd.read_csv(path)
 
     preprocessor.load_vocab(vocab)
 
     data_set = pre_process(df)
 
-    tokenizer = Tokenizer(num_words=max_features)
-    tokenizer.fit_on_texts(data_set[TEXT_KEY])
+    tokenizer = Tokenizer(num_words=max_features,
+                          filters='"#$%&()*+,-./:;<=>@[\\]^_`{|}~\t\n',)
 
-    x_train = pad_sequences(tokenizer.texts_to_sequences(data_set[TEXT_KEY].fillna(' ').values), maxlen=sequence_length)
-    y_train = data_set[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
+    x_train = data_set[TEXT_KEY].fillna(' ').values
+    y_train = data_set[CLASS_KEYS].values
 
-    print('Number of Data Samples:' + str(len(x_train)))
-    print('Number of Classes: ' + str(6))
+    print('Number of Data Samples: ' + str(len(x_train)))
+    print('Number of Classes: ' + str(len(CLASS_KEYS)))
 
     return (x_train, y_train), tokenizer
 
 
 def load_data_split(path, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN, vocab=None):
-    (x_train, y_train), tokenizer = load_data(path, max_features, sequence_length, vocab=vocab)
+    (x_train, y_train), tokenizer = load_data(path, max_features, vocab=vocab)
 
-    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.05, random_state=RANDOM_SEED)
+    x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=RANDOM_SEED)
+
+    tokenizer.fit_on_texts(x_train)
+
+    x_train = pad_sequences(tokenizer.texts_to_sequences(x_train), maxlen=sequence_length)
+    x_val = pad_sequences(tokenizer.texts_to_sequences(x_val), maxlen=sequence_length)
 
     return (np.array(x_train), np.array(y_train)), (np.array(x_val), np.array(y_val)), tokenizer
 
 
 def load_data_folds(path, folds=10, max_features=MAX_FEATS, sequence_length=MAX_SEQ_LEN, vocab=None):
-    (x_train, y_train), tokenizer = load_data(path, max_features, sequence_length, vocab=vocab)
+    (x_train, y_train), tokenizer = load_data(path, max_features, vocab=vocab)
+
+    tokenizer.fit_on_texts(x_train)
+
+    x_train = pad_sequences(tokenizer.texts_to_sequences(x_train), maxlen=sequence_length)
 
     kfold = KFold(n_splits=folds, random_state=RANDOM_SEED)
     folds = kfold.split(x_train)
