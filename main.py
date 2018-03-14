@@ -19,6 +19,8 @@ from src.write_results import write_results
 from src.util import get_save_path
 # Model definition
 from src.models.bidirectional_GRU_conc_pool import BidirectionalGRUConcPool
+# from src.models.hierarchical_attention_network import HAN
+# from src.models.GRU_conc_pool import GRUConcPool
 # Custom Layers
 from src.layers.Attention import FeedForwardAttention
 
@@ -35,10 +37,11 @@ train_path = './data/train.csv'
 test_path = './data/test.csv'
 submission_path = './data/sample_submission.csv'
 # Paths to glove embeddings.
-glove_path = './data/embeddings/glove.42B.300d.txt'
+glove_path = './data/embeddings/glove.twitter.27B.200d.txt'
+# glove_path = './data/embeddings/glove.42B.300d.txt'
 # glove_path = './data/embeddings/glove.840B.300d.txt'
 fast_text_path = './data/embeddings/crawl-300d-2M.vec'
-embedding_dimension = 300
+embedding_dimension = 200
 
 if EMBEDDINGS == 'GLOVE':
     embedding_path = glove_path

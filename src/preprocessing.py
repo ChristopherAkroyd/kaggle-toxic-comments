@@ -20,9 +20,13 @@ emoji_regex = re.compile(REGEX_LOOKUP['EMOJI'])
 email_regex = re.compile(REGEX_LOOKUP['EMAIL'])
 time_regex = re.compile(REGEX_LOOKUP['TIME'])
 money_regex = re.compile(REGEX_LOOKUP['MONEY'])
+numbers_regex = re.compile(REGEX_LOOKUP['NUMBERS'])
 
 special_character_regex = re.compile('([\;\:\|•«»\n←→])')
+
 users_regex = re.compile('\[\[.*\]')
+# users_regex = re.compile('\[\[User(.*)\|')
+
 
 s_contraction = re.compile('\'s')
 d_contraction = re.compile('\'d')
@@ -42,15 +46,19 @@ apostrophe_normalise_regex = re.compile('[‘´’]')
 apostrophe_removal_regex_glove = re.compile("(?!('s)|('d)|('m)|('ll)|(n't)|('ve)|('re))[']")
 apostrophe_removal_regex_fast_text = re.compile("[']")
 
-alphanumeric_only = re.compile("(?!('s)|('d)|('m)|('ll)|(n't)|('ve)|('re))[^\w\s]")
-
 # alpha_test = re.compile("[^\w\s.,?!%^;:{}=+\-_`~()<>|\[\]]")
 alpha_test = re.compile("[^\w\s.,?!<>]")
 
-arrows = re.compile('[<>_]')
+# arrows = re.compile('[<>_]')
 
 tokenize_punct = re.compile('([.,?!]{1})')
 control_chars = re.compile('[\n\t\r\v\f\0]')
+
+
+repeated_punct = re.compile('([!?.]){2,}')
+# elongated_words = re.compile('(.)\1{2,}')
+elongated_words = re.compile(r"\b(\S*?)(.)\2{2,}\b")
+word_split = re.compile(r'[/\-_\\]')
 
 
 class TextPreProcessor:
@@ -80,73 +88,78 @@ class TextPreProcessor:
 
         return string
 
-    def clean(self, s):
-        s = s.lower()
+    def clean(self, text):
+        text = text.lower()
 
-        s = arrows.sub(' ', s)
+        # text = arrows.sub(' ', text)
+        # Replace newline characters
+        text = control_chars.sub(' ', text)
 
         # Replace ips
-        s = ip_regex.sub(' <IP> ', s)
+        text = ip_regex.sub(' <IP> ', text)
         # Replace URLs
-        s = url_regex.sub(' <URL> ', s)
+        text = url_regex.sub(' <URL> ', text)
         # Replace Emails
-        s = email_regex.sub(' <EMAIL> ', s)
+        text = email_regex.sub(' <EMAIL> ', text)
         # Replace User Names
-        s = users_regex.sub(' <USER> ', s)
+        text = users_regex.sub(' <USER> ', text)
         # Replace Dates/Time
-        s = date_regex.sub(' <DATE> ', s)
-        s = time_regex.sub(' <TIME> ', s)
+        text = date_regex.sub(' <DATE> ', text)
+        text = time_regex.sub(' <TIME> ', text)
+        # Replace Numbers
+        text = numbers_regex.sub(' <NUMBER> ', text)
         # Replace money symbols
-        s = money_regex.sub('', s)
+        text = money_regex.sub(' <CURRENCY> ', text)
 
-        s = tokenize_punct.sub(r' \1 ', s)
+        text = repeated_punct.sub(' \1 <REPEAT> ', text)
+
+        text = word_split.sub(' ', text)
+
+        text = tokenize_punct.sub(r' \1 ', text)
+
+        # text = elongated_words.sub(r"\1", text)
+        text = elongated_words.sub(r"\1\2 <ELONG> ", text)
 
         # Remove a load of unicode emoji characters
-        s = emoji_regex.sub('', s)
+        text = emoji_regex.sub('', text)
 
         # Replace single quotations with apostrophes.
-        s = apostrophe_normalise_regex.sub("'", s)
+        text = apostrophe_normalise_regex.sub("'", text)
 
         # Glove records contractions individually e.g. don't -> do n't, therefore if using glove follow the
         if self.embedding_type == 'GLOVE' or True:
-            s = cant_replace.sub(' can not ', s)
-            s = wont_replace.sub(' will not ', s)
+            text = cant_replace.sub(' can not ', text)
+            text = wont_replace.sub(' will not ', text)
 
             # Replace contractions
-            s = s_contraction.sub(" is ", s)
-            s = d_contraction.sub(" would ", s)
-            s = m_contraction.sub(" am ", s)
+            text = s_contraction.sub(" is ", text)
+            text = d_contraction.sub(" would ", text)
+            text = m_contraction.sub(" am ", text)
 
-            s = ll_contraction.sub(" will ", s)
-            s = nt_contraction.sub(" not ", s)
-            s = ve_contraction.sub(" have ", s)
-            s = re_contraction.sub(" are ", s)
+            text = ll_contraction.sub(" will ", text)
+            text = nt_contraction.sub(" not ", text)
+            text = ve_contraction.sub(" have ", text)
+            text = re_contraction.sub(" are ", text)
 
             # Remove all now non-essential apostrophes.
-            s = apostrophe_removal_regex_glove.sub('', s)
+            # text = apostrophe_removal_regex_glove.sub('', text)
         else:
             # Other embeddings e.g. fast text just remove punctuation.
-            s = apostrophe_removal_regex_fast_text.sub('', s)
+            text = apostrophe_removal_regex_fast_text.sub('', text)
 
         # Remove some special characters
-        s = special_character_regex.sub(' ', s)
-        # Numbers are probably value less
-        s = re.sub("\d+", " ", s)
-
+        text = special_character_regex.sub(' ', text)
         # Replace numbers and symbols with language
-        s = s.replace('&', ' and ')
-        # Replace newline characters
-        s = control_chars.sub(' ', s)
-        s = s.replace('\b', ' ')
+        text = text.replace('&', ' and ')
         # Remove punctuation.
-        s = alpha_test.sub(' ', s)
+        text = alpha_test.sub(' ', text)
         # Remove multi spaces
-        s = re.sub('\s+', ' ', s)
+        text = re.sub('\s+', ' ', text)
         # Remove ending space if any
-        if len(s) > 1:
-            s = re.sub('\s+$', '', s)
+        if len(text) > 1:
+            text = re.sub('\s+$', '', text)
 
-        return s
+        return text
 
     def perform_spellcheck(self, string, mode):
         # Split the string to replace apostrophes etc.
@@ -219,7 +232,9 @@ class SpellChecker:
 
     def correction(self, word):
         "Most probable spelling correction for word."
-        return max(self.candidates(word), key=self.P)
+        if len(word) < 30:
+            return max(self.candidates(word), key=self.P)
+        return word
 
     def candidates(self, word):
         "Generate possible spelling corrections for word."

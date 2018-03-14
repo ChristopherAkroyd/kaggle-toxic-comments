@@ -1,4 +1,4 @@
-from keras.layers import Bidirectional, CuDNNGRU, Dense,  SpatialDropout1D, Input
+from keras.layers import Bidirectional, CuDNNGRU, Dense,  SpatialDropout1D, Input, BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Nadam
@@ -8,7 +8,8 @@ from src.models.TextModel import ConcPoolModel
 # HPARAMs
 BATCH_SIZE = 128
 EPOCHS = 50
-LEARN_RATE = 0.00025
+LEARN_RATE = 0.001
+# LEARN_RATE = 0.00025
 NUM_CLASSES = 12
 
 
@@ -30,7 +31,7 @@ class BidirectionalGRUConcPool(ConcPoolModel):
                                                                                recurrent_regularizer=l2(0.001),
                                                                                kernel_regularizer=l2(0.001)))(embedding)
 
-        bi_gru_1 = SpatialDropout1D(0.5)(bi_gru_1)
+        bi_gru_1 = SpatialDropout1D(0.2)(bi_gru_1)
 
         conc = self.bi_concatenate_pool(bi_gru_1, last_state_forward, last_state_back)
 
